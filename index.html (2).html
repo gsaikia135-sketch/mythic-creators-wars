@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mythic Creator Wars — MS3</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05080f;
+    --bg2: #080d18;
+    --panel: #0c1220;
+    --panel2: #111928;
+    --border: #1e2d45;
+    --gold: #c8a44a;
+    --gold2: #e6c56a;
+    --red: #e63946;
+    --green: #2ecc71;
+    --blue: #3a86ff;
+    --text: #e8eaf0;
+    --muted: #5a6a80;
+    --accent: #1e3a5f;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content:'';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(200,164,74,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,164,74,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content:'';
+    position: fixed;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 500px;
+    background: radial-gradient(ellipse, rgba(200,164,74,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 20px 40px; }
+
+  header { padding: 28px 0 0; text-align: center; }
+
+  .logo-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px; letter-spacing: 5px; color: var(--gold);
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(24px, 5vw, 48px); font-weight: 900; letter-spacing: 2px;
+    background: linear-gradient(135deg, #e6c56a 0%, #c8a44a 50%, #8b6914 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;
+  }
+
+  header h1 span {
+    display: block; font-size: clamp(14px, 2.5vw, 20px); letter-spacing: 8px;
+    background: linear-gradient(135deg, #7a9cc8 0%, #3a86ff 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-top: 4px;
+  }
+
+  .header-line {
+    width: 120px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 16px auto 0;
+  }
+
+  /* Role bar */
+  .role-bar {
+    display: none; justify-content: flex-end; align-items: center; gap: 12px; padding: 14px 0 0;
+  }
+  .role-bar.visible { display: flex; }
+
+  .role-pill {
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; padding: 5px 14px; border: 1px solid var(--border); color: var(--muted);
+  }
+  .role-pill.mod   { border-color: var(--blue); color: var(--blue); background: rgba(58,134,255,0.08); }
+  .role-pill.creator { border-color: var(--gold); color: var(--gold); background: rgba(200,164,74,0.08); }
+
+  .signout-btn {
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 14px; border: 1px solid var(--border); background: transparent;
+    color: var(--muted); cursor: pointer; transition: all 0.2s;
+  }
+  .signout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* Loading overlay */
+  #loading-overlay {
+    position: fixed; inset: 0; background: var(--bg); z-index: 999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  }
+  .spinner {
+    width: 40px; height: 40px; border: 3px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-family: 'Rajdhani', sans-serif; font-size: 12px; letter-spacing: 3px;
+    color: var(--muted); text-transform: uppercase;
+  }
+
+  /* Role screen */
+  #role-screen {
+    position: relative; z-index: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; min-height: 60vh; padding: 40px 20px;
+  }
+
+  .role-prompt {
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 4px;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 32px; text-align: center;
+  }
+
+  .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 580px; width: 100%; }
+
+  .role-card {
+    background: var(--panel); border: 1px solid var(--border); padding: 36px 28px;
+    text-align: center; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  }
+  .role-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+  .role-card .icon { font-size: 40px; margin-bottom: 14px; }
+  .role-card h3 { font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 2px; color: var(--gold); margin-bottom: 8px; }
+  .role-card p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* PIN overlay */
+  .pin-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 300; align-items: center; justify-content: center;
+  }
+  .pin-overlay.open { display: flex; }
+
+  .pin-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-top: 2px solid var(--blue); padding: 36px; width: 340px; text-align: center;
+  }
+  .pin-box h3 { font-family: 'Orbitron', sans-serif; font-size: 15px; color: var(--blue); margin-bottom: 6px; }
+  .pin-box p  { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+
+  .pin-input {
+    width: 100%; background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Orbitron', sans-serif; font-size: 22px;
+    text-align: center; padding: 12px; letter-spacing: 8px; outline: none;
+    margin-bottom: 16px; transition: border-color 0.2s;
+  }
+  .pin-input:focus { border-color: var(--blue); }
+  .pin-input.error-shake { animation: shake 0.3s; border-color: var(--red); }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+  .pin-actions { display: flex; gap: 8px; justify-content: center; }
+  .pin-error { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--red); letter-spacing: 1px; margin-bottom: 10px; min-height: 18px; }
+
+  /* Nav */
+  nav { display: flex; justify-content: center; gap: 4px; padding: 28px 0 0; }
+  nav button {
+    font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase; padding: 10px 24px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+    cursor: pointer; transition: all 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  nav button.active, nav button:hover { background: var(--gold); color: #000; border-color: var(--gold); }
+
+  /* Stats */
+  .stats-bar { display: grid; gap: 12px; margin: 24px 0; }
+  .stats-bar.two-col { grid-template-columns: repeat(2,1fr); }
+  .stats-bar.four-col { grid-template-columns: repeat(4,1fr); }
+
+  .stat-card {
+    background: var(--panel); border: 1px solid var(--border); padding: 16px 20px;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    text-align: center;
+  }
+  .stat-card .num { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700; color: var(--gold); }
+  .stat-card .lbl { font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+
+  /* Tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Section title */
+  .sec-title {
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 4px;
+    color: var(--gold); text-transform: uppercase; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sec-title::after { content:''; flex:1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+
+  .field label {
+    display: block; font-family: 'Rajdhani', sans-serif; font-size: 11px;
+    letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%; background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px;
+    padding: 10px 14px; outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--gold); }
+  .field select option { background: var(--panel2); }
+
+  /* Creator welcome */
+  .creator-welcome {
+    background: linear-gradient(135deg, rgba(200,164,74,0.08), rgba(200,164,74,0.03));
+    border: 1px solid rgba(200,164,74,0.2); border-left: 3px solid var(--gold);
+    padding: 18px 22px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
+  }
+  .creator-welcome .welcome-icon { font-size: 28px; }
+  .creator-welcome h4 { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; color: var(--gold); letter-spacing: 1px; margin-bottom: 4px; }
+  .creator-welcome p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Buttons */
+  .btn {
+    font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; padding: 12px 32px;
+    border: none; cursor: pointer; transition: all 0.2s;
+    clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn-gold:hover:not(:disabled) { background: var(--gold2); }
+  .btn-sm { padding: 6px 16px; font-size: 11px; letter-spacing: 2px; clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%); }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover:not(:disabled) { background: #27ae60; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-red:hover:not(:disabled) { background: #c0392b; }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-blue:hover:not(:disabled) { background: #2563eb; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); clip-path: none; padding: 6px 14px; font-size: 11px; }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Queue */
+  .queue-filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-btn {
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; padding: 6px 16px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active { border-color: var(--gold); color: var(--gold); }
+
+  .search-box {
+    margin-left: auto; background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px;
+    padding: 7px 14px; outline: none; width: 200px;
+  }
+  .search-box:focus { border-color: var(--gold); }
+
+  /* Submission card */
+  .submission-card {
+    background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--border);
+    padding: 16px 20px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; transition: border-color 0.2s;
+  }
+  .submission-card:hover { border-color: var(--gold); border-left-color: var(--gold); }
+  .submission-card.approved { border-left-color: var(--green); }
+  .submission-card.rejected { border-left-color: var(--red); opacity: 0.6; }
+  .submission-card.pending  { border-left-color: var(--gold); }
+
+  .sub-info .creator-name { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+  .sub-info .content-title { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+  .sub-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+  .badge { font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 10px; border: 1px solid; }
+  .badge-yt  { color: #ff4444; border-color: #ff4444; background: rgba(255,68,68,0.1); }
+  .badge-ig  { color: #e1306c; border-color: #e1306c; background: rgba(225,48,108,0.1); }
+  .badge-tt  { color: #69c9d0; border-color: #69c9d0; background: rgba(105,201,208,0.1); }
+  .badge-fb  { color: #4267B2; border-color: #4267B2; background: rgba(66,103,178,0.1); }
+  .badge-tw  { color: #1da1f2; border-color: #1da1f2; background: rgba(29,161,242,0.1); }
+  .badge-other { color: var(--muted); border-color: var(--border); }
+
+  .badge-status-pending  { color: var(--gold);  border-color: var(--gold);  background: rgba(200,164,74,0.1); }
+  .badge-status-approved { color: var(--green); border-color: var(--green); background: rgba(46,204,113,0.1); }
+  .badge-status-rejected { color: var(--red);   border-color: var(--red);   background: rgba(230,57,70,0.1); }
+
+  .views-chip { font-family: 'Orbitron', sans-serif; font-size: 11px; color: var(--gold); }
+  .sub-date { font-size: 11px; color: var(--muted); }
+  .sub-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+  .link-btn {
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 1px;
+    color: var(--blue); text-decoration: none; border: 1px solid rgba(58,134,255,0.3);
+    padding: 4px 10px; transition: all 0.2s;
+  }
+  .link-btn:hover { background: rgba(58,134,255,0.1); }
+
+  /* Leaderboard */
+  .lb-controls { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .week-select {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Rajdhani', sans-serif; font-size: 12px; letter-spacing: 1px;
+    padding: 8px 14px; outline: none; cursor: pointer;
+  }
+  .lb-table { width: 100%; border-collapse: collapse; }
+  .lb-table th {
+    font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--muted); text-align: left;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .lb-table td { padding: 12px 14px; border-bottom: 1px solid rgba(30,45,69,0.5); font-size: 13px; vertical-align: middle; }
+  .lb-table tr:hover td { background: rgba(200,164,74,0.03); }
+
+  .rank-num { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; width: 40px; text-align: center; }
+  .rank-crown { font-size: 18px; }
+
+  .creator-cell { display: flex; flex-direction: column; }
+  .creator-cell .handle { font-weight: 500; color: var(--text); }
+  .creator-cell .platform-tag { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .views-col { font-family: 'Orbitron', sans-serif; font-size: 13px; color: var(--gold); font-weight: 700; }
+  .change-up   { color: var(--green); font-size: 11px; }
+  .change-down { color: var(--red);   font-size: 11px; }
+  .change-same { color: var(--muted); font-size: 11px; }
+
+  .bar-cell { width: 140px; }
+  .view-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .view-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 2px; transition: width 0.6s ease; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 100; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--gold);
+    padding: 28px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-family: 'Orbitron', sans-serif; font-size: 16px; color: var(--gold); margin-bottom: 20px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-field label {
+    display: block; font-family: 'Rajdhani', sans-serif; font-size: 10px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+  }
+  .modal-field input {
+    width: 100%; background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; padding: 9px 12px; outline: none;
+  }
+  .modal-field input:focus { border-color: var(--gold); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--panel);
+    border: 1px solid var(--gold); border-left: 3px solid var(--gold);
+    padding: 12px 20px; font-family: 'Rajdhani', sans-serif; font-size: 13px;
+    letter-spacing: 1px; color: var(--text); z-index: 200; transform: translateX(120%); transition: transform 0.3s;
+  }
+  .toast.show  { transform: translateX(0); }
+  .toast.error { border-color: var(--red); border-left-color: var(--red); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
+  }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* Panel box */
+  .panel-box { background: var(--panel); border: 1px solid var(--border); padding: 24px; margin-bottom: 20px; }
+
+  /* Success screen */
+  #success-screen { display: none; text-align: center; padding: 60px 20px; }
+  #success-screen .success-icon { font-size: 56px; margin-bottom: 16px; }
+  #success-screen h2 { font-family: 'Orbitron', sans-serif; font-size: 22px; color: var(--gold); margin-bottom: 10px; }
+  #success-screen p { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+  /* DB status indicator */
+  .db-status {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted); margin-left: auto;
+  }
+  .db-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .db-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .db-dot.error { background: var(--red); }
+
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-bar.four-col { grid-template-columns: repeat(2,1fr); }
+    .submission-card { grid-template-columns: 1fr; }
+    .sub-actions { justify-content: flex-start; }
+    .bar-cell { display: none; }
+    nav button { padding: 8px 14px; font-size: 11px; }
+    .role-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Connecting to database...</div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <div class="logo-label">WarDrumGames Presents</div>
+    <h1>MYTHIC CREATOR WARS<span>MYTHIC SHOWDOWN S3</span></h1>
+    <div class="header-line"></div>
+  </header>
+
+  <!-- Role bar -->
+  <div class="role-bar" id="role-bar">
+    <span class="role-pill" id="role-pill-label"></span>
+    <div class="db-status" id="db-status">
+      <div class="db-dot" id="db-dot"></div>
+      <span id="db-label">DB</span>
+    </div>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+
+  <!-- ═══ SCREEN 1: ROLE SELECTION ═══ -->
+  <div id="role-screen">
+    <div class="role-prompt">Choose your access level to continue</div>
+    <div class="role-cards">
+      <div class="role-card" onclick="enterAsCreator()">
+        <div class="icon">🎮</div>
+        <h3>Creator</h3>
+        <p>Submit your Mythic Showdown S3 content for review and competition entry.</p>
+      </div>
+      <div class="role-card" onclick="openPinOverlay()">
+        <div class="icon">🛡️</div>
+        <h3>Moderator</h3>
+        <p>Access the moderation queue, approve submissions, and manage the leaderboard.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 2: CREATOR VIEW ═══ -->
+  <div id="creator-screen" style="display:none;">
+
+    <div class="stats-bar two-col" style="margin-top:24px;">
+      <div class="stat-card">
+        <div class="num" id="c-stat-total">—</div>
+        <div class="lbl">Total Submissions</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="c-stat-approved">—</div>
+        <div class="lbl">Approved</div>
+      </div>
+    </div>
+
+    <div class="creator-welcome">
+      <div class="welcome-icon">⚔️</div>
+      <div>
+        <h4>Welcome, Creator!</h4>
+        <p>Submit your MS3 content below. Make sure your post includes <strong style="color:var(--gold)">#MS3MOBA</strong> or <strong style="color:var(--gold)">#WarDrumGames</strong> to qualify. Moderators will review and approve your entry.</p>
+      </div>
+    </div>
+
+    <div class="panel-box">
+      <div class="sec-title">Creator Submission</div>
+
+      <div id="submit-form">
+        <div class="form-grid">
+          <div class="field">
+            <label>Discord Username</label>
+            <input type="text" id="f-discord" placeholder="e.g. creator#1234">
+          </div>
+          <div class="field">
+            <label>Creator / Channel Name</label>
+            <input type="text" id="f-name" placeholder="Your channel or page name">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Platform</label>
+            <select id="f-platform">
+              <option value="">Select platform</option>
+              <option value="YouTube">YouTube</option>
+              <option value="Instagram">Instagram</option>
+              <option value="TikTok">TikTok</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Twitter/X">Twitter / X</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Content Type</label>
+            <select id="f-type">
+              <option value="">Select type</option>
+              <option value="Video">Video</option>
+              <option value="Short / Reel">Short / Reel</option>
+              <option value="Highlights">Highlights</option>
+              <option value="Montage">Montage</option>
+              <option value="Review / Analysis">Review / Analysis</option>
+              <option value="Stream Clip">Stream Clip</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid full">
+          <div class="field">
+            <label>Content Title</label>
+            <input type="text" id="f-title" placeholder="Title of your video / post">
+          </div>
+        </div>
+        <div class="form-grid full">
+          <div class="field">
+            <label>Content Link (URL)</label>
+            <input type="url" id="f-link" placeholder="https://...">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>MS3 Tags Used</label>
+            <input type="text" id="f-tags" placeholder="e.g. #MS3MOBA #WarDrumGames">
+          </div>
+          <div class="field">
+            <label>Initial View Count</label>
+            <input type="number" id="f-views" placeholder="0" min="0">
+          </div>
+        </div>
+        <div style="margin-top:4px;">
+          <button class="btn btn-gold" id="submit-btn" onclick="submitContent()">Submit for Review</button>
+        </div>
+      </div>
+
+      <div id="success-screen">
+        <div class="success-icon">✅</div>
+        <h2>Submission Received!</h2>
+        <p>Your content is now in the moderation queue. A moderator will review it shortly.</p>
+        <button class="btn btn-gold" onclick="resetSubmitForm()">Submit Another</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 3: MODERATOR VIEW ═══ -->
+  <div id="mod-screen" style="display:none;">
+
+    <nav id="mod-nav">
+      <button class="active" onclick="switchModTab('queue')">Mod Queue</button>
+      <button onclick="switchModTab('leaderboard')">Leaderboard</button>
+    </nav>
+
+    <div class="stats-bar four-col" style="margin-top:24px;">
+      <div class="stat-card">
+        <div class="num" id="stat-total">—</div>
+        <div class="lbl">Total Submissions</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-pending">—</div>
+        <div class="lbl">Pending Review</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-approved">—</div>
+        <div class="lbl">Approved</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-views">—</div>
+        <div class="lbl">Total Views</div>
+      </div>
+    </div>
+
+    <!-- MOD QUEUE -->
+    <div id="tab-queue" class="tab-content active">
+      <div class="panel-box">
+        <div class="sec-title">Moderation Queue</div>
+        <div class="queue-filters">
+          <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('pending',this)">Pending</button>
+          <button class="filter-btn" onclick="setFilter('approved',this)">Approved</button>
+          <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
+          <input class="search-box" id="queue-search" type="text" placeholder="Search creator..." oninput="renderQueue()">
+        </div>
+        <div id="queue-list"></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div id="tab-leaderboard" class="tab-content">
+      <div class="panel-box">
+        <div class="sec-title">Weekly View Rankings</div>
+        <div class="lb-controls">
+          <select class="week-select" id="platform-filter" onchange="renderLeaderboard()">
+            <option value="all">All Platforms</option>
+            <option value="YouTube">YouTube</option>
+            <option value="Instagram">Instagram</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Twitter/X">Twitter / X</option>
+          </select>
+          <button class="btn btn-blue btn-sm" onclick="openUpdateModal()">Update Views</button>
+          <button class="btn btn-ghost" onclick="loadAll()" style="margin-left:auto;">↻ Refresh</button>
+        </div>
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th style="width:50px">Rank</th>
+              <th>Creator</th>
+              <th>Content</th>
+              <th>Platform</th>
+              <th>Views</th>
+              <th>Change</th>
+              <th class="bar-cell"></th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="lb-body"></tbody>
+        </table>
+        <div id="lb-empty" class="empty-state" style="display:none;">
+          <div class="icon">🏆</div>No approved content yet
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mod-screen -->
+
+</div><!-- /wrap -->
+
+<!-- PIN Overlay -->
+<div class="pin-overlay" id="pin-overlay">
+  <div class="pin-box">
+    <h3>Moderator Access</h3>
+    <p>Enter the moderator PIN to continue</p>
+    <input class="pin-input" id="pin-input" type="password" maxlength="6" placeholder="••••••"
+           oninput="clearPinError()" onkeydown="if(event.key==='Enter') verifyPin()">
+    <div class="pin-error" id="pin-error"></div>
+    <div class="pin-actions">
+      <button class="btn btn-ghost" onclick="closePinOverlay()">Cancel</button>
+      <button class="btn btn-blue btn-sm" onclick="verifyPin()">Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Views Modal -->
+<div class="modal-overlay" id="update-modal">
+  <div class="modal">
+    <h3>Update View Count</h3>
+    <div id="update-fields"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold btn-sm" onclick="saveViewUpdates()">Save Updates</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// ═══════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://dfkfzindabxkgxspohyk.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma2Z6aW5kYWJ4a2d4c3BvaHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDU1NTAsImV4cCI6MjA5NjQyMTU1MH0.ntSCoytldFXD_7fCOifhxppyfEqroLtwmiRCqoOKxMo';
+
+// ═══════════════════════════════════════════════════
+// CHANGE THIS PIN BEFORE DEPLOYING
+// ═══════════════════════════════════════════════════
+const MOD_PIN = '1234';
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let db;
+let submissions  = [];
+let currentFilter = 'all';
+let currentRole   = null;
+
+// ═══════════════════════════════════════════════════
+// INIT — connect to Supabase then hide loader
+// ═══════════════════════════════════════════════════
+async function init() {
+  try {
+    db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // Quick connectivity test
+    const { error } = await db.from('submissions').select('id').limit(1);
+    if (error) throw error;
+
+    setDbStatus(true);
+  } catch (e) {
+    console.error('Supabase error:', e);
+    setDbStatus(false);
+    showToast('Database connection failed. Check console.', true);
+  } finally {
+    document.getElementById('loading-overlay').style.display = 'none';
+  }
+}
+
+function setDbStatus(ok) {
+  const dot   = document.getElementById('db-dot');
+  const label = document.getElementById('db-label');
+  dot.className   = 'db-dot ' + (ok ? 'connected' : 'error');
+  label.textContent = ok ? 'Live DB' : 'DB Error';
+}
+
+// ═══════════════════════════════════════════════════
+// SUPABASE HELPERS
+// ═══════════════════════════════════════════════════
+async function loadAll() {
+  if (!db) return;
+  const { data, error } = await db
+    .from('submissions')
+    .select('*')
+    .order('submitted_at', { ascending: false });
+
+  if (error) { showToast('Failed to load submissions', true); return; }
+
+  // Normalise weekly_views from JSON string → array
+  submissions = (data || []).map(r => ({
+    ...r,
+    weekly_views: parseArr(r.weekly_views)
+  }));
+
+  updateStats();
+  if (currentRole === 'creator')  updateCreatorStats();
+  if (currentRole === 'mod')      { renderQueue(); }
+}
+
+function parseArr(val) {
+  if (Array.isArray(val)) return val;
+  try { return JSON.parse(val || '[]'); } catch { return []; }
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function platformBadge(p) {
+  const map = { YouTube:'badge-yt', Instagram:'badge-ig', TikTok:'badge-tt', Facebook:'badge-fb', 'Twitter/X':'badge-tw' };
+  return map[p] || 'badge-other';
+}
+
+function formatViews(n) {
+  n = Number(n) || 0;
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 1000)    return (n/1000).toFixed(1)+'K';
+  return n.toString();
+}
+
+function dateStr(ts) {
+  return new Date(Number(ts)).toLocaleDateString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+// ═══════════════════════════════════════════════════
+// ROLE MANAGEMENT
+// ═══════════════════════════════════════════════════
+async function enterAsCreator() {
+  currentRole = 'creator';
+  show('creator-screen'); hide('role-screen'); hide('mod-screen');
+  setPill('🎮 Creator', 'creator');
+  document.getElementById('role-bar').classList.add('visible');
+  await loadAll();
+}
+
+async function enterAsMod() {
+  currentRole = 'mod';
+  show('mod-screen'); hide('role-screen'); hide('creator-screen');
+  setPill('🛡️ Moderator', 'mod');
+  document.getElementById('role-bar').classList.add('visible');
+  await loadAll();
+}
+
+function signOut() {
+  currentRole = null;
+  submissions = [];
+  show('role-screen'); hide('creator-screen'); hide('mod-screen');
+  document.getElementById('role-bar').classList.remove('visible');
+}
+
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+function setPill(text, cls) {
+  const p = document.getElementById('role-pill-label');
+  p.textContent = text;
+  p.className = 'role-pill ' + cls;
+}
+
+// ═══════════════════════════════════════════════════
+// PIN
+// ═══════════════════════════════════════════════════
+function openPinOverlay() {
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('pin-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+}
+
+function closePinOverlay() { document.getElementById('pin-overlay').classList.remove('open'); }
+function clearPinError()   { document.getElementById('pin-error').textContent = ''; document.getElementById('pin-input').classList.remove('error-shake'); }
+
+function verifyPin() {
+  const entered = document.getElementById('pin-input').value.trim();
+  if (entered === MOD_PIN) {
+    closePinOverlay();
+    enterAsMod();
+  } else {
+    const inp = document.getElementById('pin-input');
+    document.getElementById('pin-error').textContent = 'Incorrect PIN. Try again.';
+    inp.classList.add('error-shake');
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('error-shake'), 400);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════
+function updateStats() {
+  const total    = submissions.length;
+  const pending  = submissions.filter(s => s.status === 'pending').length;
+  const approved = submissions.filter(s => s.status === 'approved').length;
+  const views    = submissions.filter(s => s.status === 'approved')
+                              .reduce((a,s) => a + (s.weekly_views?.at(-1) || s.views || 0), 0);
+
+  setText('stat-total',    total);
+  setText('stat-pending',  pending);
+  setText('stat-approved', approved);
+  setText('stat-views',    formatViews(views));
+}
+
+function updateCreatorStats() {
+  setText('c-stat-total',    submissions.length);
+  setText('c-stat-approved', submissions.filter(s => s.status === 'approved').length);
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ═══════════════════════════════════════════════════
+// SUBMIT (Creator)
+// ═══════════════════════════════════════════════════
+async function submitContent() {
+  const discord  = document.getElementById('f-discord').value.trim();
+  const name     = document.getElementById('f-name').value.trim();
+  const platform = document.getElementById('f-platform').value;
+  const type     = document.getElementById('f-type').value;
+  const title    = document.getElementById('f-title').value.trim();
+  const link     = document.getElementById('f-link').value.trim();
+  const tags     = document.getElementById('f-tags').value.trim();
+  const views    = parseInt(document.getElementById('f-views').value) || 0;
+
+  if (!discord || !name || !platform || !title || !link) {
+    showToast('Please fill all required fields', true); return;
+  }
+  if (!link.startsWith('http')) {
+    showToast('Please enter a valid URL', true); return;
+  }
+  const hasTag = tags.toLowerCase().includes('ms3') || tags.toLowerCase().includes('wardrum');
+  if (!hasTag) {
+    showToast('Must include #MS3MOBA or #WarDrumGames tag', true); return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const row = {
+    discord,
+    name,
+    platform,
+    type,
+    title,
+    link,
+    tags,
+    views,
+    weekly_views: JSON.stringify([views]),
+    status:       'pending',
+    submitted_at: Date.now(),
+    week:         'week1'
+  };
+
+  const { error } = await db.from('submissions').insert([row]);
+
+  btn.disabled = false;
+  btn.textContent = 'Submit for Review';
+
+  if (error) {
+    showToast('Submission failed: ' + error.message, true); return;
+  }
+
+  await loadAll();
+  document.getElementById('submit-form').style.display    = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+}
+
+function resetSubmitForm() {
+  ['f-discord','f-name','f-title','f-link','f-tags','f-views'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-platform').value = '';
+  document.getElementById('f-type').value = '';
+  document.getElementById('submit-form').style.display    = 'block';
+  document.getElementById('success-screen').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════
+// MOD TABS
+// ═══════════════════════════════════════════════════
+function switchModTab(tab) {
+  document.querySelectorAll('#mod-screen .tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#mod-nav button').forEach((btn, i) => {
+    btn.classList.toggle('active', ['queue','leaderboard'][i] === tab);
+  });
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (tab === 'leaderboard') renderLeaderboard();
+}
+
+// ═══════════════════════════════════════════════════
+// MOD QUEUE
+// ═══════════════════════════════════════════════════
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderQueue();
+}
+
+function renderQueue() {
+  const search = (document.getElementById('queue-search')?.value || '').toLowerCase();
+  const list   = document.getElementById('queue-list');
+
+  let filtered = submissions.filter(s => {
+    const matchFilter = currentFilter === 'all' || s.status === currentFilter;
+    const matchSearch = !search ||
+      (s.name   || '').toLowerCase().includes(search) ||
+      (s.discord || '').toLowerCase().includes(search) ||
+      (s.title  || '').toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📭</div>No submissions found</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="submission-card ${s.status}" id="card-${s.id}">
+      <div class="sub-info">
+        <div class="creator-name">${s.name} <span style="color:var(--muted);font-size:12px;font-weight:400">@${s.discord}</span></div>
+        <div class="content-title">${s.title}</div>
+        <div class="sub-meta">
+          <span class="badge ${platformBadge(s.platform)}">${s.platform}</span>
+          <span class="badge" style="color:var(--muted);border-color:var(--border)">${s.type||'Content'}</span>
+          <span class="badge badge-status-${s.status}">${s.status.toUpperCase()}</span>
+          <span class="views-chip">👁 ${formatViews(s.views)}</span>
+          <span class="sub-date">${dateStr(s.submitted_at)}</span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--muted)">${s.tags}</div>
+      </div>
+      <div class="sub-actions">
+        <a href="${s.link}" target="_blank" class="link-btn">View ↗</a>
+        ${s.status === 'pending' ? `
+          <button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Approve</button>
+          <button class="btn btn-red btn-sm"   onclick="setStatus(${s.id},'rejected')">Reject</button>
+        ` : s.status === 'approved' ? `
+          <button class="btn btn-red btn-sm"   onclick="setStatus(${s.id},'rejected')">Revoke</button>
+        ` : `
+          <button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Re-approve</button>
+        `}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function setStatus(id, status) {
+  const sub = submissions.find(s => s.id === id);
+  if (!sub) return;
+
+  const { error } = await db.from('submissions').update({ status }).eq('id', id);
+  if (error) { showToast('Update failed: ' + error.message, true); return; }
+
+  sub.status = status;
+  updateStats();
+  renderQueue();
+  showToast(`${sub.name} ${status === 'approved' ? '✓ Approved' : '✗ Rejected'}`);
+}
+
+// ═══════════════════════════════════════════════════
+// LEADERBOARD
+// ═══════════════════════════════════════════════════
+function renderLeaderboard() {
+  const pfFilter = document.getElementById('platform-filter')?.value || 'all';
+  let approved = submissions.filter(s => s.status === 'approved');
+  if (pfFilter !== 'all') approved = approved.filter(s => s.platform === pfFilter);
+
+  approved.sort((a, b) => {
+    const av = a.weekly_views?.at(-1) || a.views || 0;
+    const bv = b.weekly_views?.at(-1) || b.views || 0;
+    return bv - av;
+  });
+
+  const maxViews = approved[0] ? (approved[0].weekly_views?.at(-1) || approved[0].views || 1) : 1;
+  const body  = document.getElementById('lb-body');
+  const empty = document.getElementById('lb-empty');
+
+  if (!approved.length) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  body.innerHTML = approved.map((s, i) => {
+    const rank      = i + 1;
+    const views     = s.weekly_views?.at(-1) || s.views || 0;
+    const prevViews = s.weekly_views?.at(-2)  || views;
+    const diff      = views - prevViews;
+    const pct       = Math.round((views / maxViews) * 100);
+
+    const rankDisplay = rank <= 3
+      ? `<span class="rank-crown">${['🥇','🥈','🥉'][rank-1]}</span>`
+      : `<span class="rank-num" style="color:var(--muted)">#${rank}</span>`;
+
+    const changeHtml = diff > 0
+      ? `<span class="change-up">▲ ${formatViews(diff)}</span>`
+      : diff < 0
+      ? `<span class="change-down">▼ ${formatViews(Math.abs(diff))}</span>`
+      : `<span class="change-same">—</span>`;
+
+    return `
+      <tr>
+        <td style="text-align:center">${rankDisplay}</td>
+        <td><div class="creator-cell"><span class="handle">${s.name}</span><span class="platform-tag">@${s.discord}</span></div></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--muted)">${s.title}</td>
+        <td><span class="badge ${platformBadge(s.platform)}">${s.platform}</span></td>
+        <td class="views-col">${formatViews(views)}</td>
+        <td>${changeHtml}</td>
+        <td class="bar-cell"><div class="view-bar"><div class="view-bar-fill" style="width:${pct}%"></div></div></td>
+        <td><a href="${s.link}" target="_blank" class="link-btn">View ↗</a></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// UPDATE VIEWS MODAL
+// ═══════════════════════════════════════════════════
+function openUpdateModal() {
+  const approved = submissions.filter(s => s.status === 'approved');
+  if (!approved.length) { showToast('No approved submissions yet', true); return; }
+
+  document.getElementById('update-fields').innerHTML = approved.map(s => `
+    <div class="modal-field">
+      <label>${s.name} — ${s.platform} — ${s.title.substring(0,30)}${s.title.length>30?'...':''}</label>
+      <input type="number" id="uv-${s.id}" value="${s.weekly_views?.at(-1) || s.views || 0}" min="0">
+    </div>
+  `).join('');
+
+  document.getElementById('update-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('update-modal').classList.remove('open'); }
+
+async function saveViewUpdates() {
+  const approved = submissions.filter(s => s.status === 'approved');
+  const updates  = [];
+
+  for (const s of approved) {
+    const input = document.getElementById('uv-' + s.id);
+    if (!input) continue;
+    const newViews = parseInt(input.value) || 0;
+    const arr = [...(s.weekly_views || [s.views || 0]), newViews];
+    updates.push({ id: s.id, views: newViews, weekly_views: JSON.stringify(arr) });
+  }
+
+  // Run all updates in parallel
+  const results = await Promise.all(
+    updates.map(u => db.from('submissions').update({ views: u.views, weekly_views: u.weekly_views }).eq('id', u.id))
+  );
+
+  const failed = results.filter(r => r.error).length;
+  if (failed) { showToast(`${failed} update(s) failed`, true); }
+
+  closeModal();
+  await loadAll();
+  renderLeaderboard();
+  showToast('View counts updated!');
+}
+
+// ═══════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
