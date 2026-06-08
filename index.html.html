@@ -1066,7 +1066,7 @@ function renderCreators() {
   const search = (document.getElementById('creator-search')?.value || '').toLowerCase();
   const list = document.getElementById('creators-list');
 
-  // Group by discord
+  // Group submissions by discord username
   const map = {};
   submissions.forEach(s => {
     const key = (s.discord || 'unknown').toLowerCase();
@@ -1076,18 +1076,16 @@ function renderCreators() {
 
   let groups = Object.values(map);
 
-  // Filter
   if (search) {
     groups = groups.filter(g =>
-      g.discord.toLowerCase().includes(search) ||
-      g.name.toLowerCase().includes(search)
+      (g.discord||'').toLowerCase().includes(search) ||
+      (g.name||'').toLowerCase().includes(search)
     );
   }
 
-  // Sort by total views desc
   groups.sort((a, b) => {
-    const av = a.subs.reduce((t, s) => t + (s.weekly_views?.at(-1) || s.views || 0), 0);
-    const bv = b.subs.reduce((t, s) => t + (s.weekly_views?.at(-1) || s.views || 0), 0);
+    const av = a.subs.reduce((t,s) => t + (s.weekly_views?.at(-1)||s.views||0), 0);
+    const bv = b.subs.reduce((t,s) => t + (s.weekly_views?.at(-1)||s.views||0), 0);
     return bv - av;
   });
 
@@ -1097,77 +1095,78 @@ function renderCreators() {
   }
 
   list.innerHTML = groups.map((g, gi) => {
-    const totalViews = g.subs.reduce((t, s) => t + (s.weekly_views?.at(-1) || s.views || 0), 0);
+    const totalViews = g.subs.reduce((t,s) => t + (s.weekly_views?.at(-1)||s.views||0), 0);
     const approved   = g.subs.filter(s => s.status === 'approved').length;
     const pending    = g.subs.filter(s => s.status === 'pending').length;
-    const initials   = (g.name || g.discord || '?').substring(0, 2).toUpperCase();
+    const initials   = (g.name || g.discord || '?').substring(0,2).toUpperCase();
     const cardId     = 'cp-' + gi;
 
-    const rows = g.subs.map(s => `
-      <div class="cp-sub-row">
+    const rows = g.subs.map(s => {
+      const v = s.weekly_views?.at(-1) || s.views || 0;
+      let actionBtns = '';
+      if (s.status === 'pending') {
+        actionBtns = `<button class="btn btn-green btn-sm cp-action-btn" data-id="${s.id}" data-action="approved">Approve</button>
+                      <button class="btn btn-red btn-sm cp-action-btn" data-id="${s.id}" data-action="rejected">Reject</button>`;
+      } else if (s.status === 'approved') {
+        actionBtns = `<button class="btn btn-red btn-sm cp-action-btn" data-id="${s.id}" data-action="rejected">Revoke</button>`;
+      } else {
+        actionBtns = `<button class="btn btn-green btn-sm cp-action-btn" data-id="${s.id}" data-action="approved">Re-approve</button>`;
+      }
+      return `<div class="cp-sub-row">
         <div>
           <div class="cp-sub-title">${s.title}</div>
-          <div class="cp-sub-platform">
+          <div class="cp-sub-platform" style="margin-top:4px;">
             <span class="badge ${pbadge(s.platform)}" style="font-size:9px;padding:2px 8px">${s.platform}</span>
             <span class="badge badge-status-${s.status}" style="font-size:9px;padding:2px 8px;margin-left:4px">${s.status.toUpperCase()}</span>
           </div>
         </div>
-        <div class="cp-sub-views">👁 ${fv(s.weekly_views?.at(-1) || s.views || 0)}</div>
+        <div class="cp-sub-views">👁 ${fv(v)}</div>
         <div class="cp-sub-actions">
           <a href="${s.link}" target="_blank" class="link-btn">View ↗</a>
-          ${s.status === 'pending'
-            ? `<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Approve</button>
-               <button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected')">Reject</button>`
-            : s.status === 'approved'
-            ? `<button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected')">Revoke</button>`
-            : `<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Re-approve</button>`
-          }
+          ${actionBtns}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
-    return `
-      <div class="creator-profile-card" id="${cardId}">
-        <div class="creator-profile-header" onclick="toggleCreator('${cardId}')">
-          <div class="cp-info">
-            <div class="cp-avatar">${initials}</div>
-            <div class="cp-name-wrap">
-              <div class="cp-name">${g.name}</div>
-              <div class="cp-discord">@${g.discord}</div>
-            </div>
-          </div>
-          <div class="cp-right">
-            <div class="cp-stats">
-              <div class="cp-stat">
-                <div class="cp-stat-num">${g.subs.length}</div>
-                <div class="cp-stat-lbl">Videos</div>
-              </div>
-              <div class="cp-stat">
-                <div class="cp-stat-num">${fv(totalViews)}</div>
-                <div class="cp-stat-lbl">Total Views</div>
-              </div>
-              <div class="cp-stat">
-                <div class="cp-stat-num" style="background:linear-gradient(135deg,var(--green),#00a855);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${approved}</div>
-                <div class="cp-stat-lbl">Approved</div>
-              </div>
-              ${pending > 0 ? `<div class="cp-stat">
-                <div class="cp-stat-num" style="background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${pending}</div>
-                <div class="cp-stat-lbl">Pending</div>
-              </div>` : ''}
-            </div>
-            <div class="cp-toggle">▼</div>
+    return `<div class="creator-profile-card" id="${cardId}">
+      <div class="creator-profile-header" onclick="toggleCreator('${cardId}')">
+        <div class="cp-info">
+          <div class="cp-avatar">${initials}</div>
+          <div class="cp-name-wrap">
+            <div class="cp-name">${g.name}</div>
+            <div class="cp-discord">@${g.discord}</div>
           </div>
         </div>
-        <div class="cp-submissions">
-          <div class="cp-header-label">
-            <span>Content</span><span>Views</span><span></span>
+        <div class="cp-right">
+          <div class="cp-stats">
+            <div class="cp-stat"><div class="cp-stat-num">${g.subs.length}</div><div class="cp-stat-lbl">Videos</div></div>
+            <div class="cp-stat"><div class="cp-stat-num">${fv(totalViews)}</div><div class="cp-stat-lbl">Total Views</div></div>
+            <div class="cp-stat"><div class="cp-stat-num" style="background:linear-gradient(135deg,var(--green),#00a855);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${approved}</div><div class="cp-stat-lbl">Approved</div></div>
+            ${pending > 0 ? `<div class="cp-stat"><div class="cp-stat-num" style="background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${pending}</div><div class="cp-stat-lbl">Pending</div></div>` : ''}
           </div>
-          ${rows}
+          <div class="cp-toggle">▼</div>
         </div>
       </div>
-    `;
+      <div class="cp-submissions">
+        <div class="cp-header-label"><span>Content</span><span>Views</span><span></span></div>
+        ${rows}
+      </div>
+    </div>`;
   }).join('');
+
+  // Attach click handlers using event delegation — avoids all inline onclick issues
+  list.querySelectorAll('.cp-action-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id     = parseInt(btn.dataset.id);
+      const action = btn.dataset.action;
+      btn.disabled = true;
+      btn.textContent = '...';
+      await setStatus(id, action);
+    });
+  });
 }
+
 
 function toggleCreator(cardId) {
   document.getElementById(cardId).classList.toggle('expanded');
