@@ -789,7 +789,7 @@ nav button.active,nav button:hover{color:#fff;border-color:var(--purple2);box-sh
       <div class="welcome-icon">⚔️</div>
       <div>
         <h4>Welcome, Creator!</h4>
-        <p>Submit your MS3 content below. Your post must include <strong style="color:var(--gold2);font-weight:700">#MS3MOBA</strong> or <strong style="color:var(--gold2);font-weight:700">#WarDrumGames</strong> to qualify. Moderators will review and approve your entry.</p>
+        <p>Submit your MS3 content below. Your post must include <strong style="color:var(--gold2);font-weight:700">#MythicShowdownS3</strong> or <strong style="color:var(--gold2);font-weight:700">#MS3MOBA</strong> to qualify. Moderators will review and approve your entry.</p>
       </div>
     </div>
     <div class="panel-box">
@@ -820,7 +820,7 @@ nav button.active,nav button:hover{color:#fff;border-color:var(--purple2);box-sh
         <div class="form-grid full"><div class="field"><label>Content Title</label><input type="text" id="f-title" placeholder="Title of your video / post"></div></div>
         <div class="form-grid full"><div class="field"><label>Content Link (URL)</label><input type="url" id="f-link" placeholder="https://..."></div></div>
         <div class="form-grid">
-          <div class="field"><label>MS3 Tags Used</label><input type="text" id="f-tags" placeholder="#MS3MOBA #WarDrumGames"></div>
+          <div class="field"><label>MS3 Tags Used</label><input type="text" id="f-tags" placeholder="#MythicShowdownS3 #MS3MOBA"></div>
           <div class="field"><label>Initial View Count</label><input type="number" id="f-views" placeholder="0" min="0"></div>
         </div>
         <div style="margin-top:12px;">
@@ -930,7 +930,7 @@ nav button.active,nav button:hover{color:#fff;border-color:var(--purple2);box-sh
 <script>
 const SUPABASE_URL  = 'https://dfkfzindabxkgxspohyk.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRma2Z6aW5kYWJ4a2d4c3BvaHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDU1NTAsImV4cCI6MjA5NjQyMTU1MH0.ntSCoytldFXD_7fCOifhxppyfEqroLtwmiRCqoOKxMo';
-const MOD_PIN = '1234';
+const MOD_PIN = 'adm1n@wardrum';
 
 let db, submissions=[], currentFilter='all', currentRole=null;
 
@@ -1033,7 +1033,7 @@ async function submitContent(){
   const views=parseInt(document.getElementById('f-views').value)||0;
   if(!discord||!name||!platform||!title||!link){showToast('Please fill all required fields',true);return;}
   if(!link.startsWith('http')){showToast('Please enter a valid URL',true);return;}
-  if(!tags.toLowerCase().includes('ms3')&&!tags.toLowerCase().includes('wardrum')){showToast('Must include #MS3MOBA or #WarDrumGames',true);return;}
+  if(!tags.toLowerCase().includes('mythicshowdowns3')&&!tags.toLowerCase().includes('ms3moba')){showToast('Must include #MythicShowdownS3 or #MS3MOBA',true);return;}
   const btn=document.getElementById('submit-btn');
   btn.disabled=true;btn.textContent='Submitting...';
   const {error}=await db.from('submissions').insert([{discord,name,platform,type,title,link,tags,views,weekly_views:JSON.stringify([views]),status:'pending',submitted_at:Date.now(),week:'week1'}]);
