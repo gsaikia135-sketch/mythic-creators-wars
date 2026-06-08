@@ -479,10 +479,8 @@ nav button.active,nav button:hover{color:#fff;border-color:var(--purple2);box-sh
   border:1px solid var(--border);border-left:4px solid var(--border);
   padding:20px 24px;margin-bottom:10px;
   display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;
-  transition:all 0.3s;position:relative;overflow:hidden;
+  transition:border-color 0.3s, box-shadow 0.3s;position:relative;
 }
-.submission-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(139,53,232,0.03),transparent);opacity:0;transition:opacity 0.3s;}
-.submission-card:hover::after{opacity:1;}
 .submission-card:hover{border-color:var(--purple);border-left-color:var(--purple2);box-shadow:0 6px 30px rgba(139,53,232,0.18);}
 .submission-card.approved{border-left-color:var(--green);}
 .submission-card.rejected{border-left-color:var(--red);opacity:0.5;}
@@ -518,6 +516,7 @@ nav button.active,nav button:hover{color:#fff;border-color:var(--purple2);box-sh
   font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;
   color:var(--purple2);text-decoration:none;border:1px solid rgba(139,53,232,0.4);
   padding:6px 14px;transition:all 0.25s;
+  position:relative;z-index:5;display:inline-block;
 }
 .link-btn:hover{background:rgba(139,53,232,0.15);border-color:var(--purple2);}
 
@@ -1062,110 +1061,136 @@ function switchModTab(tab) {
 }
 
 function renderCreators() {
-  const search = (document.getElementById('creator-search')?.value || '').toLowerCase();
-  const list = document.getElementById('creators-list');
+  const search=(document.getElementById('creator-search')?.value||'').toLowerCase();
+  const list=document.getElementById('creators-list');
 
-  // Group submissions by discord username
-  const map = {};
-  submissions.forEach(s => {
-    const key = (s.discord || 'unknown').toLowerCase();
-    if (!map[key]) map[key] = { discord: s.discord, name: s.name, subs: [] };
+  const map={};
+  submissions.forEach(function(s){
+    const key=(s.discord||'unknown').toLowerCase();
+    if(!map[key]) map[key]={discord:s.discord,name:s.name,subs:[]};
     map[key].subs.push(s);
   });
 
-  let groups = Object.values(map);
-
-  if (search) {
-    groups = groups.filter(g =>
-      (g.discord||'').toLowerCase().includes(search) ||
-      (g.name||'').toLowerCase().includes(search)
-    );
+  let groups=Object.values(map);
+  if(search){
+    groups=groups.filter(function(g){
+      return (g.discord||'').toLowerCase().includes(search)||(g.name||'').toLowerCase().includes(search);
+    });
   }
 
-  groups.sort((a, b) => {
-    const av = a.subs.reduce((t,s) => t + (s.weekly_views?.at(-1)||s.views||0), 0);
-    const bv = b.subs.reduce((t,s) => t + (s.weekly_views?.at(-1)||s.views||0), 0);
-    return bv - av;
+  groups.sort(function(a,b){
+    const av=a.subs.reduce(function(t,s){return t+(s.weekly_views?.at(-1)||s.views||0);},0);
+    const bv=b.subs.reduce(function(t,s){return t+(s.weekly_views?.at(-1)||s.views||0);},0);
+    return bv-av;
   });
 
-  if (!groups.length) {
-    list.innerHTML = '<div class="empty-state"><span class="icon">👤</span><p>No creators found</p></div>';
+  if(!groups.length){
+    list.innerHTML='<div class="empty-state"><span class="icon">👤</span><p>No creators found</p></div>';
     return;
   }
 
-  list.innerHTML = groups.map((g, gi) => {
-    const totalViews = g.subs.reduce((t,s) => t + (s.weekly_views?.at(-1)||s.views||0), 0);
-    const approved   = g.subs.filter(s => s.status === 'approved').length;
-    const pending    = g.subs.filter(s => s.status === 'pending').length;
-    const initials   = (g.name || g.discord || '?').substring(0,2).toUpperCase();
-    const cardId     = 'cp-' + gi;
+  list.innerHTML='';
 
-    const rows = g.subs.map(s => {
-      const v = s.weekly_views?.at(-1) || s.views || 0;
-      let actionBtns = '';
-      if (s.status === 'pending') {
-        actionBtns = `<button class="btn btn-green btn-sm cp-action-btn" data-id="${s.id}" data-action="approved">Approve</button>
-                      <button class="btn btn-red btn-sm cp-action-btn" data-id="${s.id}" data-action="rejected">Reject</button>`;
-      } else if (s.status === 'approved') {
-        actionBtns = `<button class="btn btn-red btn-sm cp-action-btn" data-id="${s.id}" data-action="rejected">Revoke</button>`;
-      } else {
-        actionBtns = `<button class="btn btn-green btn-sm cp-action-btn" data-id="${s.id}" data-action="approved">Re-approve</button>`;
-      }
-      return `<div class="cp-sub-row">
+  groups.forEach(function(g,gi){
+    const totalViews=g.subs.reduce(function(t,s){return t+(s.weekly_views?.at(-1)||s.views||0);},0);
+    const approved=g.subs.filter(function(s){return s.status==='approved';}).length;
+    const pending=g.subs.filter(function(s){return s.status==='pending';}).length;
+    const initials=(g.name||g.discord||'?').substring(0,2).toUpperCase();
+    const cardId='cp-'+gi;
+
+    const card=document.createElement('div');
+    card.className='creator-profile-card';
+    card.id=cardId;
+
+    // Header
+    const header=document.createElement('div');
+    header.className='creator-profile-header';
+    header.innerHTML=`
+      <div class="cp-info">
+        <div class="cp-avatar">${initials}</div>
+        <div class="cp-name-wrap">
+          <div class="cp-name">${g.name}</div>
+          <div class="cp-discord">@${g.discord}</div>
+        </div>
+      </div>
+      <div class="cp-right">
+        <div class="cp-stats">
+          <div class="cp-stat"><div class="cp-stat-num">${g.subs.length}</div><div class="cp-stat-lbl">Videos</div></div>
+          <div class="cp-stat"><div class="cp-stat-num">${fv(totalViews)}</div><div class="cp-stat-lbl">Total Views</div></div>
+          <div class="cp-stat"><div class="cp-stat-num" style="background:linear-gradient(135deg,var(--green),#00a855);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${approved}</div><div class="cp-stat-lbl">Approved</div></div>
+          ${pending>0?`<div class="cp-stat"><div class="cp-stat-num" style="background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${pending}</div><div class="cp-stat-lbl">Pending</div></div>`:''}
+        </div>
+        <div class="cp-toggle">▼</div>
+      </div>
+    `;
+    header.addEventListener('click', function(){ toggleCreator(cardId); });
+    card.appendChild(header);
+
+    // Submissions body
+    const body=document.createElement('div');
+    body.className='cp-submissions';
+    body.innerHTML='<div class="cp-header-label"><span>Content</span><span>Views</span><span></span></div>';
+
+    g.subs.forEach(function(s){
+      const v=s.weekly_views?.at(-1)||s.views||0;
+      const row=document.createElement('div');
+      row.className='cp-sub-row';
+      row.innerHTML=`
         <div>
           <div class="cp-sub-title">${s.title}</div>
-          <div class="cp-sub-platform" style="margin-top:4px;">
+          <div style="margin-top:4px;">
             <span class="badge ${pbadge(s.platform)}" style="font-size:9px;padding:2px 8px">${s.platform}</span>
             <span class="badge badge-status-${s.status}" style="font-size:9px;padding:2px 8px;margin-left:4px">${s.status.toUpperCase()}</span>
           </div>
         </div>
         <div class="cp-sub-views">👁 ${fv(v)}</div>
-        <div class="cp-sub-actions">
-          <a href="${s.link}" target="_blank" class="link-btn">View ↗</a>
-          ${actionBtns}
-        </div>
-      </div>`;
-    }).join('');
+        <div class="cp-sub-actions" id="cpa-${s.id}"></div>
+      `;
+      body.appendChild(row);
 
-    return `<div class="creator-profile-card" id="${cardId}">
-      <div class="creator-profile-header" onclick="toggleCreator('${cardId}')">
-        <div class="cp-info">
-          <div class="cp-avatar">${initials}</div>
-          <div class="cp-name-wrap">
-            <div class="cp-name">${g.name}</div>
-            <div class="cp-discord">@${g.discord}</div>
-          </div>
-        </div>
-        <div class="cp-right">
-          <div class="cp-stats">
-            <div class="cp-stat"><div class="cp-stat-num">${g.subs.length}</div><div class="cp-stat-lbl">Videos</div></div>
-            <div class="cp-stat"><div class="cp-stat-num">${fv(totalViews)}</div><div class="cp-stat-lbl">Total Views</div></div>
-            <div class="cp-stat"><div class="cp-stat-num" style="background:linear-gradient(135deg,var(--green),#00a855);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${approved}</div><div class="cp-stat-lbl">Approved</div></div>
-            ${pending > 0 ? `<div class="cp-stat"><div class="cp-stat-num" style="background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">${pending}</div><div class="cp-stat-lbl">Pending</div></div>` : ''}
-          </div>
-          <div class="cp-toggle">▼</div>
-        </div>
-      </div>
-      <div class="cp-submissions">
-        <div class="cp-header-label"><span>Content</span><span>Views</span><span></span></div>
-        ${rows}
-      </div>
-    </div>`;
-  }).join('');
+      // Build buttons for this sub
+      const actDiv=row.querySelector('#cpa-'+s.id);
 
-  // Attach click handlers using event delegation — avoids all inline onclick issues
-  list.querySelectorAll('.cp-action-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id     = parseInt(btn.dataset.id);
-      const action = btn.dataset.action;
-      btn.disabled = true;
-      btn.textContent = '...';
-      await setStatus(id, action);
+      const vLink=document.createElement('a');
+      vLink.href=s.link;
+      vLink.target='_blank';
+      vLink.className='link-btn';
+      vLink.textContent='View ↗';
+      actDiv.appendChild(vLink);
+
+      if(s.status==='pending'){
+        const ab=document.createElement('button');
+        ab.className='btn btn-green btn-sm';
+        ab.textContent='Approve';
+        ab.addEventListener('click',function(e){e.stopPropagation();setStatus(s.id,'approved');});
+        actDiv.appendChild(ab);
+
+        const rb=document.createElement('button');
+        rb.className='btn btn-red btn-sm';
+        rb.textContent='Reject';
+        rb.addEventListener('click',function(e){e.stopPropagation();setStatus(s.id,'rejected');});
+        actDiv.appendChild(rb);
+
+      } else if(s.status==='approved'){
+        const rvb=document.createElement('button');
+        rvb.className='btn btn-red btn-sm';
+        rvb.textContent='Revoke';
+        rvb.addEventListener('click',function(e){e.stopPropagation();setStatus(s.id,'rejected');});
+        actDiv.appendChild(rvb);
+
+      } else {
+        const rab=document.createElement('button');
+        rab.className='btn btn-green btn-sm';
+        rab.textContent='Re-approve';
+        rab.addEventListener('click',function(e){e.stopPropagation();setStatus(s.id,'approved');});
+        actDiv.appendChild(rab);
+      }
     });
+
+    card.appendChild(body);
+    list.appendChild(card);
   });
 }
-
 
 function toggleCreator(cardId) {
   document.getElementById(cardId).classList.toggle('expanded');
@@ -1175,16 +1200,22 @@ function toggleCreator(cardId) {
 function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderQueue();}
 
 function renderQueue(){
-  const s=(document.getElementById('queue-search')?.value||'').toLowerCase();
+  const search=(document.getElementById('queue-search')?.value||'').toLowerCase();
   const list=document.getElementById('queue-list');
   const filtered=submissions.filter(x=>{
     const mf=currentFilter==='all'||x.status===currentFilter;
-    const ms=!s||(x.name||'').toLowerCase().includes(s)||(x.discord||'').toLowerCase().includes(s)||(x.title||'').toLowerCase().includes(s);
+    const ms=!search||(x.name||'').toLowerCase().includes(search)||(x.discord||'').toLowerCase().includes(search)||(x.title||'').toLowerCase().includes(search);
     return mf&&ms;
   });
-  if(!filtered.length){list.innerHTML='<div class="empty-state"><span class="icon">📭</span><p>No submissions found</p></div>';return;}
-  list.innerHTML=filtered.map(s=>`
-    <div class="submission-card ${s.status}">
+  if(!filtered.length){
+    list.innerHTML='<div class="empty-state"><span class="icon">📭</span><p>No submissions found</p></div>';
+    return;
+  }
+  list.innerHTML='';
+  filtered.forEach(function(s){
+    const div=document.createElement('div');
+    div.className='submission-card '+s.status;
+    div.innerHTML=`
       <div class="sub-info">
         <div class="creator-name">${s.name} <span style="color:var(--muted);font-size:13px;font-weight:500">@${s.discord}</span></div>
         <div class="content-title">${s.title}</div>
@@ -1197,11 +1228,50 @@ function renderQueue(){
         </div>
         <div style="margin-top:8px;font-size:12px;color:var(--muted);font-weight:500">${s.tags}</div>
       </div>
-      <div class="sub-actions">
-        <a href="${s.link}" target="_blank" class="link-btn">View ↗</a>
-        ${s.status==='pending'?`<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Approve</button><button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected')">Reject</button>`:s.status==='approved'?`<button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected')">Revoke</button>`:`<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Re-approve</button>`}
-      </div>
-    </div>`).join('');
+      <div class="sub-actions" id="actions-${s.id}"></div>
+    `;
+    list.appendChild(div);
+
+    // Build action buttons using createElement - no inline JS, no template literals for events
+    const actionsDiv = document.getElementById('actions-'+s.id);
+
+    // View link
+    const viewLink = document.createElement('a');
+    viewLink.href = s.link;
+    viewLink.target = '_blank';
+    viewLink.className = 'link-btn';
+    viewLink.textContent = 'View ↗';
+    actionsDiv.appendChild(viewLink);
+
+    // Approve / Reject buttons
+    if(s.status==='pending'){
+      const approveBtn = document.createElement('button');
+      approveBtn.className = 'btn btn-green btn-sm';
+      approveBtn.textContent = 'Approve';
+      approveBtn.addEventListener('click', function(){ setStatus(s.id,'approved'); });
+      actionsDiv.appendChild(approveBtn);
+
+      const rejectBtn = document.createElement('button');
+      rejectBtn.className = 'btn btn-red btn-sm';
+      rejectBtn.textContent = 'Reject';
+      rejectBtn.addEventListener('click', function(){ setStatus(s.id,'rejected'); });
+      actionsDiv.appendChild(rejectBtn);
+
+    } else if(s.status==='approved'){
+      const revokeBtn = document.createElement('button');
+      revokeBtn.className = 'btn btn-red btn-sm';
+      revokeBtn.textContent = 'Revoke';
+      revokeBtn.addEventListener('click', function(){ setStatus(s.id,'rejected'); });
+      actionsDiv.appendChild(revokeBtn);
+
+    } else {
+      const reapproveBtn = document.createElement('button');
+      reapproveBtn.className = 'btn btn-green btn-sm';
+      reapproveBtn.textContent = 'Re-approve';
+      reapproveBtn.addEventListener('click', function(){ setStatus(s.id,'approved'); });
+      actionsDiv.appendChild(reapproveBtn);
+    }
+  });
 }
 
 async function setStatus(id,status){
