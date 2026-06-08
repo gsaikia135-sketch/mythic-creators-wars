@@ -1116,11 +1116,11 @@ function renderCreators() {
         <div class="cp-sub-actions">
           <a href="${s.link}" target="_blank" class="link-btn">View ↗</a>
           ${s.status === 'pending'
-            ? `<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved');renderCreators()">Approve</button>
-               <button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected');renderCreators()">Reject</button>`
+            ? `<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Approve</button>
+               <button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected')">Reject</button>`
             : s.status === 'approved'
-            ? `<button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected');renderCreators()">Revoke</button>`
-            : `<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved');renderCreators()">Re-approve</button>`
+            ? `<button class="btn btn-red btn-sm" onclick="setStatus(${s.id},'rejected')">Revoke</button>`
+            : `<button class="btn btn-green btn-sm" onclick="setStatus(${s.id},'approved')">Re-approve</button>`
           }
         </div>
       </div>
@@ -1210,8 +1210,14 @@ async function setStatus(id,status){
   const sub=submissions.find(s=>s.id===id);if(!sub)return;
   const {error}=await db.from('submissions').update({status}).eq('id',id);
   if(error){showToast('Update failed: '+error.message,true);return;}
-  sub.status=status;updateStats();renderQueue();
-  showToast(`${sub.name} ${status==='approved'?'✓ Approved':'✗ Rejected'}`);
+  sub.status=status;
+  updateStats();
+  // Refresh whichever tab is currently active
+  const queueActive   = document.getElementById('tab-queue')?.classList.contains('active');
+  const creatorsActive = document.getElementById('tab-creators')?.classList.contains('active');
+  if(queueActive)    renderQueue();
+  if(creatorsActive) renderCreators();
+  showToast(sub.name+' '+(status==='approved'?'✓ Approved':'✗ Rejected'));
 }
 
 function renderLeaderboard(){
